@@ -20,32 +20,52 @@ std::ostream& operator<<(std::ostream &os, Vec4<T> &vObj);
 template <typename T>
 std::ostream& operator<<(std::ostream &os, Mat44<T> &matObj);
 
-typedef float Point[3];
+bool computePixelCoordinate(const Vec4<float>& pWorld, const Mat44<float>& cameraToWorld, const float& canvasWidth, const float& canvasHeight, const int& imageWidth, const int& imageHeight, Vec4<int>& pRaster){
+    Vec4<float> pCamera;
+    Mat44<float> worldToCamera = cameraToWorld.inverse();
+    pCamera = pWorld * worldToCamera;
 
-void projectedPoints(const uint32_t &w, const uint32_t &h, const Point (&c)[8]);
+    //Coordinates to points on canvas
+    Vec4<float> pScreen;
+    pScreen.x = pCamera.x / -pCamera.z;
+    pScreen.y = pCamera.y / -pCamera.z;
+
+    //filtering all outside points
+    if(std::abs(pScreen.x) > canvasWidth || std::abs(pScreen.y) > canvasHeight){
+        return false;
+    }
+
+    //Normalize coordinates to [0,1]
+    Vec4<float> pNDC;
+    pNDC.x = (pScreen.x + canvasWidth * 0.5) / canvasWidth;
+    pNDC.y = (pScreen.y + canvasHeight * 0.5) / canvasHeight;
+
+    //Convert to pixel coordinate (rasterization)
+    pRaster.x = std::floor(pNDC.x * imageWidth);
+    pRaster.y = std::floor((1.0 - pNDC.y) * imageWidth);
+
+    return true;
+}
 
 int main(){
-    Point corners[8] = {
-        { 1, -1, -5},
-        { 1, -1, -3},
-        { 1,  1, -5},
-        { 1,  1, -3},
-        {-1, -1, -5},
-        {-1, -1, -3},
-        {-1,  1, -5},
-        {-1,  1, -3}
-    };
 
-    uint32_t image_width = 1024; 
+    uint32_t image_width = 512; 
     uint32_t image_height = 512;
 
-    Mat44<float> m(0.718762f, 0.615033f, -0.324214f, 0.0f, -0.393732f, 0.744416f, 0.539277f, 0, 0.573024f, -0.259959f, 0.777216f, 0.0f, 0.526967f, 1.254234f, -2.53215f, 1.0f);
+    Mat44<float> cameraToWorld(0.718762f, 0.615033f, -0.324214f, 0.0f, -0.393732f, 0.744416f, 0.539277f, 0.0f, 0.573024f, -0.259959f, 0.777216f, 0.0f, 0.526967f, 1.254234f, -2.53215f, 1.0f);
+    
+    Vec4<float> pWorld(-0.315792, 1.4489, -2.48901);
 
-    Vec4<float> pLocal(-0.5f, 0.5f, -0.5f), pWorld;
+    float canvasWidth = 2.0;
+    float canvasHeight = 2.0;
 
-    pWorld = pLocal * m;
+    Vec4<int> pRaster;
 
-    std::cout << pWorld << "\n";
+    if(computePixelCoordinate(pWorld, cameraToWorld, canvasWidth, canvasHeight, image_width, image_height, pRaster)){
+        std::cout << pRaster << "\n";
+    } else {
+        std::cout << pWorld << " isn't visible\n";
+    }
 
     return 0;
 }
@@ -55,10 +75,10 @@ Vec4<T> sphericalToCartesion(const T& theta, const T& phi){
     return Vec4<T>(cos(phi) * sin(theta), cos(theta) * sin(phi), cos(theta));
 }
 
-// template <typename T>
-// T sphericalTheta(const Vec4<T>& v){
-//     return acos(clamp<T>(v[2], T(-1), T(1)));
-// }
+template <typename T>
+T sphericalTheta(const Vec4<T>& v){
+    return acos(clamp(v.z, T(-1), T(1)));
+}
 
 template <typename T>
 T sphericalPhi(const Vec4<T>& v){
@@ -85,22 +105,4 @@ std::ostream& operator<<(std::ostream &os, Mat44<T> &matObj){
     }
     os << '}';
     return os;
-}
-
-void projectedPoints(const uint32_t &w, const uint32_t &h, const Point (&c)[8]){
-    float aspect_ratio = w / static_cast<float>(h);
-
-    for (int i = 0; i < 8; i++){
-        float x_project = c[i][0] / -c[i][2];
-        float y_project = c[i][1] / -c[i][2] * aspect_ratio;
-
-        float x_proj_remap = (1 + x_project) / 2;
-        float y_proj_remap = (1 + y_project) / 2;
-
-        float x_proj_pix = x_proj_remap * w;
-        float y_proj_pix = y_proj_remap * h;
-
-        std::cout << "X projection point: " << x_proj_pix << "\n";
-        std::cout << "Y projection point: " << y_proj_pix << "\n"; 
-    }
 }

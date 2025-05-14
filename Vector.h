@@ -12,12 +12,11 @@ template <typename T>
 class Vec4{
 public:
     T x, y, z, w;
-    T v[4];
 
-    Vec4():x(T(0)), y(T(0)), z(T(0)), w(T(1)){v[0] = x; v[1] = y; v[2] = z; v[3] = w;}
-    Vec4(const T &xx): x(xx), y(xx), z(xx), w(T(1)){v[0] = x; v[1] = y; v[2] = z; v[3] = w;}
-    Vec4(T xx, T yy, T zz): x(xx), y(yy), z(zz), w(T(1)){v[0] = x; v[1] = y; v[2] = z; v[3] = w;}
-    Vec4(T xx, T yy, T zz, T ww): x(xx), y(yy), z(zz), w(ww){v[0] = x; v[1] = y; v[2] = z; v[3] = w;}
+    Vec4():x(T(0)), y(T(0)), z(T(0)), w(T(1)){}
+    Vec4(const T &xx): x(xx), y(xx), z(xx), w(T(1)){}
+    Vec4(T xx, T yy, T zz): x(xx), y(yy), z(zz), w(T(1)){}
+    Vec4(T xx, T yy, T zz, T ww): x(xx), y(yy), z(zz), w(ww){}
 
     T length(){return T(sqrt(x*x + y*y + z*z));}
 
@@ -46,8 +45,7 @@ public:
             z * v.x - x * v.z,
             x * v.y - y * v.x);
     }
-
-    T* operator[](int i){return v[i];}
+    
     Vec4<T> operator + (const Vec4<T> &v){
         return Vec4<T>(x + v.x, y + v.y, z + v.z);
     }

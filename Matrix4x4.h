@@ -88,7 +88,7 @@ public:
         return cofactor.transpose();
     }
 
-    Mat44<T> invert() const {
+    Mat44<T> inverse() const {
         T det = determint();
         if(det == 0){
             return m;
